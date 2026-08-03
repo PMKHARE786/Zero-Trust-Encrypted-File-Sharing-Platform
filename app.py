@@ -9,8 +9,10 @@ import uuid
 import urllib.request
 import json
 from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
+CORS(app)
 
 DB_FILE = 'database.db'
 UPLOAD_FOLDER = 'uploads'
