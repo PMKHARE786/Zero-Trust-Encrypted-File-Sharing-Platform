@@ -204,7 +204,7 @@ def login():
     password = data.get('password')
     mfa_code = data.get('mfa_code', '').strip()
     
-    raw_ip = request.remote_addr or '127.0.0.1'
+  raw_ip = request.headers.get('X-Forwarded-For', request.remote_addr or '127.0.0.1').split(',')[0].strip()
     ip_addr, country = resolve_client_network(raw_ip)
     
     simulated_country = request.headers.get('X-Simulated-Country')
