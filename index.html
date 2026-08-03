@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Data Sharing Platform | Endpoint Guard</title>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- QRious Client-Side Local QR Code Generator -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <!-- Main Style Sheet -->
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+    <!-- Auth Glass Overlay Panel -->
+    <div id="auth-overlay" class="auth-overlay">
+        <!-- Login Card -->
+        <div id="login-card" class="auth-card">
+            <div class="auth-header">
+                <h2><i class="fa-solid fa-shield-halved"></i> SECURE VAULT</h2>
+                <p>Advanced Authentication & Endpoint Security Platform</p>
+            </div>
+            
+            <div class="form-group">
+                <label for="login-username">Username</label>
+                <div class="input-container">
+                    <i class="fa-solid fa-user"></i>
+                    <input type="text" id="login-username" class="form-input" placeholder="Enter username">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="login-password">Password</label>
+                <div class="input-container">
+                    <i class="fa-solid fa-lock"></i>
+                    <input type="password" id="login-password" class="form-input" placeholder="Enter password">
+                </div>
+            </div>
+            
+            <div id="login-mfa-group" class="form-group" style="display: none;">
+                <label for="login-mfa">6-Digit OTP or 8-Digit Backup Code</label>
+                <div class="input-container">
+                    <i class="fa-solid fa-key"></i>
+                    <input type="text" id="login-mfa" class="form-input" placeholder="###### / ########" maxlength="8">
+                </div>
+            </div>
+            
+            <button class="btn-primary" onclick="handleLoginClick()">
+                <span>Verify & Login</span> <i class="fa-solid fa-arrow-right-to-bracket"></i>
+            </button>
+            
+            <div class="auth-toggle">
+                Don't have an account? <span onclick="toggleAuthForms(true)">Register here</span>
+            </div>
+        </div>
+
+        <!-- Register Card -->
+        <div id="register-card" class="auth-card" style="display: none;">
+            <div class="auth-header">
+                <h2><i class="fa-solid fa-user-plus"></i> REGISTER ACCESS</h2>
+                <p>Configure credentials and MFA token parameters</p>
+            </div>
+            
+            <div class="form-group">
+                <label for="signup-username">Desired Username</label>
+                <div class="input-container">
+                    <i class="fa-solid fa-user"></i>
+                    <input type="text" id="signup-username" class="form-input" placeholder="Enter username">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="signup-password">Security Password</label>
+                <div class="input-container">
+                    <i class="fa-solid fa-lock"></i>
+                    <input type="password" id="signup-password" class="form-input" placeholder="Min 8 characters">
+                </div>
+                <div class="password-strength-meter">
+                    <div id="signup-strength-bar" class="strength-bar"></div>
+                </div>
+                <span id="signup-strength-label" class="password-strength-label">Strength: None</span>
+            </div>
+            
+            <button class="btn-primary" onclick="handleRegisterClick()">
+                <span>Initialize Account</span> <i class="fa-solid fa-gears"></i>
+            </button>
+            
+            <div class="auth-toggle">
+                Already registered? <span onclick="toggleAuthForms(false)">Sign in</span>
+            </div>
+        </div>
+
+        <!-- MFA Setup Card -->
+        <div id="mfa-setup-card" class="auth-card" style="display: none; max-width: 480px;">
+            <div class="auth-header">
+                <h2><i class="fa-solid fa-qrcode"></i> MFA REGISTRATION</h2>
+                <p>Scan QR code or use the secret key to set up Google Authenticator</p>
+            </div>
+            
+            <div style="background: white; padding: 0.5rem; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto; width: 160px; height: 160px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+                <!-- Real Locally-Generated Scannable Canvas QR Code -->
+                <canvas id="mfa-qr-canvas" style="display: block; width: 150px; height: 150px;"></canvas>
+            </div>
+            
+            <div class="form-group" style="text-align: center;">
+                <label>Secret Code Key</label>
+                <span id="mfa-secret-text" style="font-family: monospace; font-size: 1.1rem; color: var(--secondary); font-weight: bold; letter-spacing: 1px;"></span>
+            </div>
+            
+            <!-- Dynamic Backup codes display -->
+            <div id="mfa-backup-codes-container" style="display: none; background: rgba(37, 99, 235, 0.05); border: 1.5px dashed var(--primary); padding: 0.75rem 1rem; border-radius: 12px; text-align: left; margin-top: -0.5rem;">
+                <label style="font-weight: 800; color: var(--primary); font-size: 0.8rem; text-transform: uppercase;"><i class="fa-solid fa-triangle-exclamation"></i> Emergency Recovery Codes (Save these!):</label>
+                <div id="mfa-backup-codes-list" style="font-family: var(--font-code); font-size: 0.85rem; color: var(--text-main); margin-top: 0.4rem; display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.35rem;"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="mfa-verify-code">Verify 6-Digit MFA Code</label>
+                <div class="input-container">
+                    <i class="fa-solid fa-key"></i>
+                    <input type="text" id="mfa-verify-code" class="form-input" placeholder="######" maxlength="6">
+                </div>
+            </div>
+            
+            <button class="btn-primary" onclick="handleMfaSetupClick()">
+                <span>Enable Authentication Shield</span> <i class="fa-solid fa-circle-check"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Dashboard Container -->
+    <div class="app-container">
+        <!-- Sidebar Menu Navigation -->
+        <div class="sidebar">
+            <div>
+                <div class="logo-section">
+                    <div class="logo-icon">
+                        <i class="fa-solid fa-fingerprint" style="color: white; font-size: 1.25rem;"></i>
+                    </div>
+                    <span class="logo-text">CYBER VAULT</span>
+                </div>
+                
+                <ul class="nav-links">
+                    <li class="nav-item active" data-tab="dashboard" onclick="switchTab('dashboard')">
+                        <i class="fa-solid fa-chart-line"></i> <span>Dashboard</span>
+                    </li>
+                    <li class="nav-item" data-tab="upload" onclick="switchTab('upload')">
+                        <i class="fa-solid fa-vault"></i> <span>Secure Vault</span>
+                    </li>
+                    <li class="nav-item" data-tab="download" onclick="switchTab('download')">
+                        <i class="fa-solid fa-share-nodes"></i> <span>Decrypt Share</span>
+                    </li>
+                    <li class="nav-item" data-tab="security" onclick="switchTab('security')">
+                        <i class="fa-solid fa-circle-nodes"></i> <span>Security Center</span>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="user-profile">
+                <div id="avatar-letter" class="profile-avatar">U</div>
+                <div class="profile-info">
+                    <div id="logged-user-name" class="profile-name">Guest Session</div>
+                    <div class="profile-role">SECURE ACCESS</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Area Panels -->
+        <div class="main-content">
+            
+            <!-- Dashboard View -->
+            <div id="dashboard-panel" class="page-panel" style="display: flex; flex-direction: column; gap: 2rem; width: 100%;">
+                <div class="page-header">
+                    <div class="page-title">
+                        <h1>Security Operations Command</h1>
+                        <p>Monitoring data transfers and real-time endpoint status</p>
+                    </div>
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <span id="posture-badge" class="status-badge success">Grade: A+</span>
+                    </div>
+                </div>
+                
+                <!-- Quick statistics cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div>
+                            <div class="stat-label">Secure Files Shared</div>
+                            <div id="total-shares" class="stat-value">0</div>
+                        </div>
+                        <div class="stat-icon primary"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+                    </div>
+                    <div class="stat-card">
+                        <div>
+                            <div class="stat-label">Security Blocks Triggered</div>
+                            <div id="active-threats" class="stat-value">0</div>
+                        </div>
+                        <div class="stat-icon secondary"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    </div>
+                    <div class="stat-card">
+                        <div>
+                            <div class="stat-label">Simulated Location</div>
+                            <div id="sim-location" class="stat-value" style="font-size: 1.25rem; font-weight: 700; margin-top: 0.6rem; color: var(--secondary);">India</div>
+                        </div>
+                        <div class="stat-icon green"><i class="fa-solid fa-earth-americas"></i></div>
+                    </div>
+                </div>
+                
+                <!-- Dashboard grids -->
+                <div class="dashboard-grid">
+                    <!-- Left: Audit Logs -->
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title"><i class="fa-solid fa-list-check"></i> System Audit Log</span>
+                            <button class="btn-icon" onclick="fetchAuditLogs()"><i class="fa-solid fa-rotate"></i></button>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="log-table">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>Operation</th>
+                                        <th>Filename</th>
+                                        <th>Endpoint IP (Country)</th>
+                                        <th>Status</th>
+                                        <th>Trust Rating</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="audit-tbody">
+                                    <!-- Dynamic elements from app.js -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Right: Endpoint Trust Score -->
+                    <div class="card" style="align-items: center; justify-content: center; text-align: center;">
+                        <div class="card-header" style="width: 100%;">
+                            <span class="card-title"><i class="fa-solid fa-heart-pulse"></i> Endpoint Posture</span>
+                        </div>
+                        <div class="security-score-container">
+                            <svg class="gauge-svg" width="140" height="140">
+                                <circle class="gauge-bg" cx="70" cy="70" r="50"></circle>
+                                <circle id="gauge-fill" class="gauge-fill" cx="70" cy="70" r="50" stroke-dasharray="314" stroke-dashoffset="0"></circle>
+                            </svg>
+                            <div style="position: absolute; display: flex; flex-direction: column; align-items: center; margin-top: -15px;">
+                                <span id="gauge-text" style="font-size: 2.25rem; font-weight: 800; font-family: var(--font-code);">100</span>
+                                <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.5px;">Trust Score</span>
+                            </div>
+                        </div>
+                        <p style="color: var(--text-muted); font-size: 0.85rem; padding: 0 0.5rem;">
+                            Live metrics analyze browser dimensions, user interaction speeds, and Developer Console (F12) settings.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vault/Upload Panel -->
+            <div id="upload-panel" class="page-panel" style="display: none; flex-direction: column; gap: 2rem; width: 100%;">
+                <div class="page-header">
+                    <div class="page-title">
+                        <h1>Secure Vault Upload</h1>
+                        <p>Zero-Knowledge file encryption before server transfers</p>
+                    </div>
+                </div>
+                
+                <div class="dashboard-grid">
+                    <div class="card" style="gap: 1.5rem;">
+                        <div class="dropzone-container" id="dropzone">
+                            <div class="dropzone-icon"><i class="fa-solid fa-file-shield"></i></div>
+                            <h3>Drag & Drop or Click to Select File</h3>
+                            <p style="color: var(--text-muted); font-size: 0.85rem;">Files are fully encrypted using AES-GCM-256 in the browser.</p>
+                            <input type="file" id="file-input" class="file-input">
+                        </div>
+                        
+                        <div id="selected-file-details" class="selected-file-details" style="display: none;">
+                            <div class="file-meta-info">
+                                <i class="fa-solid fa-file-zipper"></i>
+                                <div>
+                                    <div id="selected-file-name" class="file-name-text">filename.zip</div>
+                                    <div id="selected-file-size" class="file-size-text">0.00 KB</div>
+                                </div>
+                            </div>
+                            <span class="status-badge success">READY TO ENCRYPT</span>
+                        </div>
+                        
+                        <!-- Share link result output -->
+                        <div id="share-link-result" class="share-link-box" style="display: none;">
+                            <label style="font-size: 0.85rem; font-weight: bold; color: var(--secondary);">Secure Decryption Link Generated:</label>
+                            <div class="share-link-input-group">
+                                <input type="text" id="share-link-url" class="share-link-input" readonly>
+                                <button id="btn-copy-link" class="btn-icon"><i class="fa-solid fa-copy"></i> Copy</button>
+                            </div>
+                            <p style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.25rem;">
+                                <i class="fa-solid fa-circle-info"></i> The decryption key is stored in the URL hash fragment (#) and will not be sent to our server.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Right: Encryption Controls -->
+                    <div class="card" style="gap: 1.25rem;">
+                        <div class="card-header">
+                            <span class="card-title"><i class="fa-solid fa-sliders"></i> Security Parameters</span>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="expiry-hours">Link Expiry Duration</label>
+                            <select id="expiry-hours" class="form-input" style="padding-left: 1rem;">
+                                <option value="0.083">5 Minutes</option>
+                                <option value="1">1 Hour</option>
+                                <option value="24" selected>24 Hours</option>
+                                <option value="168">7 Days</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="download-limit">Download Attempts Allowed</label>
+                            <select id="download-limit" class="form-input" style="padding-left: 1rem;">
+                                <option value="0" selected>Unlimited</option>
+                                <option value="1">Single-Use (Self-Destruct)</option>
+                                <option value="5">5 Attempts</option>
+                                <option value="10">10 Attempts</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="file-password">Decryption Password (Optional)</label>
+                            <div class="input-container">
+                                <i class="fa-solid fa-lock"></i>
+                                <input type="password" id="file-password" class="form-input" placeholder="Requires verification to download">
+                            </div>
+                        </div>
+                        
+                        <button class="btn-primary" onclick="handleUploadClick()">
+                            <span>Encrypt & Deploy</span> <i class="fa-solid fa-lock"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Download Panel -->
+            <div id="download-panel" class="page-panel" style="display: none; flex-direction: column; gap: 2rem; width: 100%;">
+                <div class="page-header">
+                    <div class="page-title">
+                        <h1>Zero-Knowledge Decryptor</h1>
+                        <p>Decrypt files locally using keys stored in the link anchor</p>
+                    </div>
+                </div>
+                
+                <div class="card" style="max-width: 600px; margin: 0 auto; width: 100%; gap: 1.5rem;">
+                    <div class="card-header">
+                        <span class="card-title"><i class="fa-solid fa-file-circle-minus"></i> File Retrieval Configuration</span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Payload File Reference ID</label>
+                        <input type="text" id="download-file-id" class="form-input" style="padding-left: 1rem;" placeholder="Select file link containing ID" readonly>
+                    </div>
+                    
+                    <!-- Hidden unless needed -->
+                    <div class="form-group" style="display: none;">
+                        <label>Integrity Check Hash</label>
+                        <input type="text" id="download-integrity-hash" class="form-input">
+                        <input type="text" id="download-key-hash" class="form-input">
+                    </div>
+                    
+                    <div id="download-password-box" class="form-group" style="display: none;">
+                        <label for="download-password">Security Password Verification</label>
+                        <div class="input-container">
+                            <i class="fa-solid fa-key"></i>
+                            <input type="password" id="download-password" class="form-input" placeholder="Enter file password">
+                        </div>
+                        <p style="color: var(--neon-red); font-size: 0.8rem; margin-top: 0.25rem;">
+                            This file is protected by password validation checks.
+                        </p>
+                    </div>
+                    
+                    <button class="btn-primary" onclick="handleDownloadClick()">
+                        <span>Verify Posture & Decrypt</span> <i class="fa-solid fa-lock-open"></i>
+                    </button>
+                </div>
+                
+                <!-- Dynamic Secure Watermarked Previewer Block -->
+                <div id="decrypted-preview-container" class="card" style="display: none; max-width: 680px; margin: 0 auto; width: 100%; gap: 1.25rem;">
+                    <div class="card-header">
+                        <span class="card-title"><i class="fa-solid fa-file-pdf"></i> Secure File View (Endpoint Watermarked)</span>
+                        <button class="btn-icon" id="btn-download-decrypted"><i class="fa-solid fa-download"></i> Save Document</button>
+                    </div>
+                    <div style="position: relative; background: #cbd5e1; border-radius: 12px; padding: 1.5rem; display: flex; align-items: center; justify-content: center; min-height: 280px; overflow: hidden;" id="preview-canvas-wrapper">
+                        <!-- Renders decrypted watermarked image or document preview -->
+                        <canvas id="preview-watermark-canvas" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 15px rgba(15,23,42,0.15);"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Center Panel -->
+            <div id="security-panel" class="page-panel" style="display: none; flex-direction: column; gap: 2rem; width: 100%;">
+                <div class="page-header">
+                    <div class="page-title">
+                        <h1>Security & Posture Center</h1>
+                        <p>Configure device constraints, geofencing settings, and examine hardware IDs</p>
+                    </div>
+                </div>
+                
+                <div class="dashboard-grid">
+                    <!-- Geofence config -->
+                    <div class="card" style="gap: 1.25rem;">
+                        <div class="card-header">
+                            <span class="card-title"><i class="fa-solid fa-earth-europe"></i> Geofence Whitelist Rules</span>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="geofence-countries">Whitelisted Countries (Comma Separated)</label>
+                            <input type="text" id="geofence-countries" class="form-input" style="padding-left: 1rem;" placeholder="e.g. India,United States">
+                        </div>
+                        
+                        <button class="btn-primary" onclick="saveGeofenceSettings()">
+                            <span>Update Firewall Rules</span> <i class="fa-solid fa-shield"></i>
+                        </button>
+                        
+                        <hr style="border-color: var(--border-color);">
+                        
+                        <div class="form-group">
+                            <label for="posture-country-select"><i class="fa-solid fa-tower-broadcast"></i> Geolocation Location Simulator</label>
+                            <select id="posture-country-select" class="form-input" style="padding-left: 1rem;">
+                                <option value="India" selected>India (Allowed)</option>
+                                <option value="United States">United States (Allowed)</option>
+                                <option value="Russia">Russia (Demo Blocked)</option>
+                                <option value="China">China (Demo Blocked)</option>
+                                <option value="Germany">Germany (Demo Blocked)</option>
+                            </select>
+                            <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.25rem;">
+                                Modify the drop-down option to simulate connecting from outside allowed countries.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Endpoint details -->
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title"><i class="fa-solid fa-microchip"></i> Hardware Fingerprint Profile</span>
+                        </div>
+                        <div id="fingerprint-grid-list" class="fingerprint-grid">
+                            <!-- Dynamic elements from app.js -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Global Threat Log Console Terminal -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title"><i class="fa-solid fa-terminal"></i> Security Agent Monitor (Threat Log)</span>
+                    <button class="btn-icon" onclick="stopAlarm()" id="btn-silence" style="color: var(--neon-red); font-weight: bold; border-color: rgba(239, 68, 68, 0.2);"><i class="fa-solid fa-volume-xmark"></i> Mute Siren</button>
+                </div>
+                <div id="threat-terminal" class="terminal-container">
+                    <div class="terminal-line success">SECURE CONTAINER MONITOR v1.0.4 loaded successfully.</div>
+                    <div class="terminal-line info">All secure channels online. Listening for local signals...</div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- UI Logic Controller Handler -->
+    <script>
+        // Toggle Sign In / Sign Up Forms
+        function toggleAuthForms(toSignup) {
+            document.getElementById('login-card').style.display = toSignup ? 'none' : 'flex';
+            document.getElementById('register-card').style.display = toSignup ? 'flex' : 'none';
+        }
+
+        // Register Action
+        async function handleRegisterClick() {
+            const user = document.getElementById('signup-username').value;
+            const pass = document.getElementById('signup-password').value;
+            
+            if (!user || !pass) {
+                alert("Please enter a username and password.");
+                return;
+            }
+            if (pass.length < 8) {
+                alert("Password must be at least 8 characters long.");
+                return;
+            }
+            
+            const data = await apiRegister(user, pass);
+            if (data) {
+                // Show MFA setup page
+                document.getElementById('register-card').style.display = 'none';
+                document.getElementById('mfa-setup-card').style.display = 'flex';
+                document.getElementById('mfa-secret-text').textContent = data.mfa_secret;
+                state.user = { username: user, mfaSecret: data.mfa_secret, mfaEnabled: 0 };
+                
+                // Draw scannable MFA QR Code locally using qrious.js (Completely Offline Working)
+                const otpauthUrl = `otpauth://totp/SecureVault:${user}?secret=${data.mfa_secret}&issuer=SecureVault`;
+                new QRious({
+                    element: document.getElementById('mfa-qr-canvas'),
+                    value: otpauthUrl,
+                    size: 150
+                });
+                
+                // Display Generated Recovery Backup Codes
+                if (data.backup_codes && data.backup_codes.length > 0) {
+                    const backupContainer = document.getElementById('mfa-backup-codes-container');
+                    const backupList = document.getElementById('mfa-backup-codes-list');
+                    backupList.innerHTML = '';
+                    
+                    data.backup_codes.forEach(code => {
+                        const codeSpan = document.createElement('span');
+                        codeSpan.style.background = 'rgba(255,255,255,0.7)';
+                        codeSpan.style.padding = '0.2rem 0.4rem';
+                        codeSpan.style.borderRadius = '4px';
+                        codeSpan.style.border = '1px solid #cbd5e1';
+                        codeSpan.style.textAlign = 'center';
+                        codeSpan.style.fontWeight = 'bold';
+                        codeSpan.textContent = code;
+                        backupList.appendChild(codeSpan);
+                    });
+                    
+                    backupContainer.style.display = 'block';
+                }
+                
+                logTerminal(`TOTP Secret and backup codes generated. Local QR Canvas rendered for user: ${user}`, 'info');
+            }
+        }
+
+        // MFA Activation Setup Action
+        async function handleMfaSetupClick() {
+            const code = document.getElementById('mfa-verify-code').value;
+            if (!code) {
+                alert("Enter the verification code.");
+                return;
+            }
+            await apiEnableMfa(code);
+        }
+
+        // Login Action
+        async function handleLoginClick() {
+            const user = document.getElementById('login-username').value;
+            const pass = document.getElementById('login-password').value;
+            const mfa = document.getElementById('login-mfa').value;
+            
+            if (!user || !pass) {
+                alert("Please fill all credential fields.");
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-Simulated-Country': state.simulatedCountry,
+                        'X-Trust-Score': state.trustScore.toString()
+                    },
+                    body: JSON.stringify({ username: user, password: pass, mfa_code: mfa })
+                });
+                const data = await response.json();
+                
+                if (response.status === 401 && data.error === "Invalid MFA Token Code") {
+                    // Password verified, MFA/Backup Code required
+                    document.getElementById('login-mfa-group').style.display = 'block';
+                    logTerminal(`Password verified. Awaiting MFA Token or Recovery Backup Code for user: ${user}`, "warning");
+                    alert("Enter MFA authentication code or a 8-digit Emergency Backup Code.");
+                    return;
+                }
+                
+                if (response.ok) {
+                    state.user = { username: user, mfaEnabled: data.mfa_enabled, mfaSecret: data.mfa_secret };
+                    logTerminal(`User session authorized: ${user}`, 'success');
+                    
+                    state.simulatedCountry = data.real_country;
+                    document.getElementById('sim-location').textContent = data.real_country;
+                    document.getElementById('posture-country-select').value = data.real_country;
+                    logTerminal(`Endpoint Location Resolved: Public IP = ${data.real_ip}, Country = ${data.real_country}`, 'success');
+                    
+                    document.getElementById('auth-overlay').style.display = 'none';
+                    document.getElementById('logged-user-name').textContent = user;
+                    document.getElementById('avatar-letter').textContent = user[0].toUpperCase();
+                    
+                    await fetchGeofenceSettings();
+                    await fetchAuditLogs();
+                    switchTab('dashboard');
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (e) {
+                logTerminal(`Authentication Failure: ${e.message}`, 'danger');
+                alert(e.message);
+            }
+        }
+
+        // File Upload Trigger Action
+        async function handleUploadClick() {
+            if (!state.selectedFile) {
+                alert("Please select a file to encrypt first.");
+                return;
+            }
+            
+            const exp = document.getElementById('expiry-hours').value;
+            const limit = document.getElementById('download-limit').value;
+            const pass = document.getElementById('file-password').value;
+            
+            await apiUploadFile(state.selectedFile, exp, limit, pass);
+        }
+
+        // File Decrypt & Download Action
+        async function handleDownloadClick() {
+            const fileId = document.getElementById('download-file-id').value;
+            const integrity = document.getElementById('download-integrity-hash').value;
+            const key = document.getElementById('download-key-hash').value;
+            const pass = document.getElementById('download-password').value;
+            
+            if (!fileId || !integrity || !key) {
+                alert("Please navigate to a valid secure share link first.");
+                return;
+            }
+            
+            await apiDownloadFile(fileId, integrity, key, pass);
+        }
+    </script>
+    
+    <!-- Main Script JS -->
+    <script src="/static/app.js"></script>
+</body>
+</html>
