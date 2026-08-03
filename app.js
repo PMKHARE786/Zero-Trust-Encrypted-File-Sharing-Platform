@@ -1,4 +1,6 @@
 // Global Application State
+const API_BASE = 'https://zero-trust-encrypted-file-sharing.onrender.com';
+
 const state = {
     user: null,
     activeTab: 'dashboard',
@@ -391,7 +393,7 @@ function updateScoreUI() {
 // API: Register User
 async function apiRegister(username, password) {
     try {
-        const response = await fetch('/api/auth/register', {
+        const response = await fetch(`${API_BASE}/api/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password })
@@ -412,7 +414,7 @@ async function apiRegister(username, password) {
 // API: Setup MFA Setup Token
 async function apiEnableMfa(mfaCode) {
     try {
-        const response = await fetch('/api/auth/mfa/enable', {
+        const response = await fetch(`${API_BASE}/api/auth/mfa/enable`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: state.user.username, mfa_code: mfaCode })
@@ -447,7 +449,7 @@ async function apiUploadFile(file, expiryHours, downloadLimit, password = '') {
         formData.append('password', password);
         
         logTerminal("Uploading encrypted package to secure vault...", "info");
-        const response = await fetch('/api/files/upload', {
+        const response = await fetch(`${API_BASE}/api/files/upload`, {
             method: 'POST',
             headers: {
                 'X-Simulated-Country': state.simulatedCountry,
@@ -476,7 +478,7 @@ async function apiDownloadFile(fileId, integrityHash, keyHash, password = '') {
     try {
         logTerminal(`Requesting secure download package for ID: ${fileId}...`, 'info');
         
-        const response = await fetch(`/api/files/download/${fileId}`, {
+        const response = await fetch(`${API_BASE}/api/files/download/${fileId}`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
@@ -542,7 +544,7 @@ async function apiDownloadFile(fileId, integrityHash, keyHash, password = '') {
 // API: Fetch Audit Logs
 async function fetchAuditLogs() {
     try {
-        const response = await fetch('/api/audit-logs');
+        const response = await fetch(`${API_BASE}/api/audit-logs`);
         const logs = await response.json();
         state.auditLogs = logs;
         renderAuditLogs();
@@ -557,7 +559,7 @@ async function fetchAuditLogs() {
 // API: Fetch Geofencing settings
 async function fetchGeofenceSettings() {
     try {
-        const response = await fetch('/api/geofence');
+        const response = await fetch(`${API_BASE}/api/geofence`);
         const data = await response.json();
         state.geofenceConfig = data.allowed_countries;
         document.getElementById('geofence-countries').value = data.allowed_countries;
@@ -570,7 +572,7 @@ async function fetchGeofenceSettings() {
 async function saveGeofenceSettings() {
     const val = document.getElementById('geofence-countries').value;
     try {
-        const response = await fetch('/api/geofence', {
+        const response = await fetch(`${API_BASE}/api/geofence`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ countries: val })
