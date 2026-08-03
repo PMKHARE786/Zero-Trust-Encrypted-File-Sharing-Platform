@@ -420,12 +420,15 @@ async function apiEnableMfa(mfaCode) {
             body: JSON.stringify({ username: state.user.username, mfa_code: mfaCode })
         });
         const data = await response.json();
-        if (response.ok) {
+       if (response.ok) {
             state.user.mfaEnabled = 1;
             logTerminal("Multi-Factor Authentication enabled successfully.", "success");
             alert("MFA Activated!");
+            document.getElementById('auth-overlay').style.display = 'none';
+            document.getElementById('logged-user-name').textContent = state.user.username;
+            document.getElementById('avatar-letter').textContent = state.user.username[0].toUpperCase();
             switchTab('dashboard');
-        } else {
+    } else {
             throw new Error(data.error);
         }
     } catch (e) {
