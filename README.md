@@ -1,3 +1,8 @@
+
+🔗 **Live Demo:** [https://pmkhare786.github.io/Zero-Trust-Encrypted-File-Sharing-Platform/](https://pmkhare786.github.io/Zero-Trust-Encrypted-File-Sharing-Platform/)
+
+
+
 # Zero-Trust Encrypted File Sharing Platform
 
 A secure web-based file sharing platform built using the Zero Trust security approach. The application enables authenticated users to upload, access, and manage files securely through encryption and access-control principles.
